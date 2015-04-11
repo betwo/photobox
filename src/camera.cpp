@@ -11,6 +11,13 @@
 #include <QImage>
 #include <jpeglib.h>
 
+#include <iostream>
+#include <iomanip>
+#include <ctime>
+#include <chrono>
+
+#include <libraw/libraw.h>
+
 namespace {
 
 static void
@@ -439,6 +446,55 @@ EOSCamera::~EOSCamera()
     gp_camera_exit(canon, canoncontext);
 }
 
+void EOSCamera::handleEvents()
+{
+    int fd, retval;
+    CameraFile *file;
+    CameraEventType	evttype;
+    CameraFilePath	*path;
+    void	*evtdata;
+
+    retval = gp_camera_wait_for_event (canon, 1000, &evttype, &evtdata, canoncontext);
+    if (retval != GP_OK)
+        return;
+    switch (evttype) {
+    case GP_EVENT_FILE_ADDED:
+        //        path = (CameraFilePath*)evtdata;
+        printf("File added on the camera: %s/%s\n", path->folder, path->name);
+
+        //        fd = open(path->name, O_CREAT | O_WRONLY, 0644);
+        //        retval = gp_file_new_from_fd(&file, fd);
+        //        printf("  Downloading %s...\n", path->name);
+        //        retval = gp_camera_file_get(canon, path->folder, path->name,
+        //                                    GP_FILE_TYPE_NORMAL, file, canoncontext);
+
+        //        printf("  Deleting %s on camera...\n", path->name);
+        //        retval = gp_camera_file_delete(canon, path->folder, path->name, canoncontext);
+        //        gp_file_free(file);
+        break;
+    case GP_EVENT_FOLDER_ADDED:
+        path = (CameraFilePath*)evtdata;
+        printf("Folder added on camera: %s / %s\n", path->folder, path->name);
+        break;
+    case GP_EVENT_CAPTURE_COMPLETE:
+        printf("Capture Complete.\n");
+        break;
+    case GP_EVENT_TIMEOUT:
+        printf("Timeout.\n");
+        break;
+    case GP_EVENT_UNKNOWN:
+        if (evtdata) {
+            printf("Unknown event: %s.\n", (char*)evtdata);
+        } else {
+            printf("Unknown event.\n");
+        }
+        break;
+    default:
+        printf("Type %d?\n", evttype);
+        break;
+    }
+    std::cout.flush();
+}
 
 void EOSCamera::autoFocus()
 {
@@ -477,36 +533,136 @@ void EOSCamera::takePicture()
     CameraEventType evttype;
     void    	*evtdata;
 
-    printf("Waiting.\n");
-    do {
-        retval = gp_camera_wait_for_event (canon, 10, &evttype, &evtdata, canoncontext);
-    } while ((retval == GP_OK) && (evttype != GP_EVENT_TIMEOUT));
+    //    printf("Waiting.\n");
+    //    do {
+    //        retval = gp_camera_wait_for_event (canon, 10, &evttype, &evtdata, canoncontext);
+    //    } while ((retval == GP_OK) && (evttype != GP_EVENT_TIMEOUT));
 
     printf("Capturing.\n");
+    std::cout.flush();
 
     /* NOP: This gets overridden in the library to /capt0000.jpg */
     strcpy(camera_file_path.folder, "/");
     strcpy(camera_file_path.name, "foo.jpg");
 
-//    retval = gp_camera_trigger_capture(canon, canoncontext);
     retval = gp_camera_capture(canon, GP_CAPTURE_IMAGE, &camera_file_path, canoncontext);
     printf("  Retval: %d\n", retval);
 
     printf("Pathname on the camera: %s/%s\n", camera_file_path.folder, camera_file_path.name);
+    std::cout.flush();
 
-    fd = open("picture.cr2", O_CREAT | O_WRONLY, 0644);
+    long now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+    std::string file = std::to_string(now) + camera_file_path.name;
+    fd = open(file.c_str(), O_CREAT | O_WRONLY, 0644);
     retval = gp_file_new_from_fd(&canonfile, fd);
     printf("  Retval: %d\n", retval);
     retval = gp_camera_file_get(canon, camera_file_path.folder, camera_file_path.name,
                                 GP_FILE_TYPE_NORMAL, canonfile, canoncontext);
     printf("  Retval: %d\n", retval);
+    std::cout.flush();
 
     printf("Deleting.\n");
+    std::cout.flush();
+
     retval = gp_camera_file_delete(canon, camera_file_path.folder, camera_file_path.name,
                                    canoncontext);
     printf("  Retval: %d\n", retval);
+    std::cout.flush();
 
     gp_file_free(canonfile);
+
+
+    int  i, ret, verbose=0, output_thumbs=0;
+    char outfn[1024],thumbfn[1024];
+
+    // Creation of image processing object
+    LibRaw RawProcessor;
+
+    // The date in TIFF is written in the local format; let us specify the timezone for compatibility with dcraw
+    putenv ((char*)"TZ=UTC");
+
+    // Let us define variables for convenient access to fields of RawProcessor
+
+#define P1  RawProcessor.imgdata.idata
+#define S   RawProcessor.imgdata.sizes
+#define C   RawProcessor.imgdata.color
+#define T   RawProcessor.imgdata.thumbnail
+#define P2  RawProcessor.imgdata.other
+#define OUT RawProcessor.imgdata.params
+
+    OUT.output_tiff = 1; // Let us output TIFF
+
+    // Let us open the file
+    if( (ret = RawProcessor.open_file(file.c_str())) != LIBRAW_SUCCESS)
+    {
+        fprintf(stderr,"Cannot open %s: %s\n",file.c_str(),libraw_strerror(ret));
+
+        // recycle() is needed only if we want to free the resources right now.
+        // If we process files in a cycle, the next open_file()
+        // will also call recycle(). If a fatal error has happened, it means that recycle()
+        // has already been called (repeated call will not cause any harm either).
+
+        RawProcessor.recycle();
+        goto end;
+    }
+
+    // Let us unpack the image
+    if( (ret = RawProcessor.unpack() ) != LIBRAW_SUCCESS)
+    {
+        fprintf(stderr,"Cannot unpack_thumb %s: %s\n",file.c_str(),libraw_strerror(ret));
+
+        if(LIBRAW_FATAL_ERROR(ret))
+            goto end;
+        // if there has been a non-fatal error, we will try to continue
+    }
+    // Let us unpack the thumbnail
+    if( (ret = RawProcessor.unpack_thumb() ) != LIBRAW_SUCCESS)
+    {
+        // error processing is completely similar to the previous case
+        fprintf(stderr,"Cannot unpack_thumb %s: %s\n",file.c_str(),libraw_strerror(ret));
+        if(LIBRAW_FATAL_ERROR(ret))
+            goto end;
+    }
+    else // We have successfully unpacked the thumbnail, now let us write it to a file
+    {
+        snprintf(thumbfn,sizeof(thumbfn),"%s.%s",file.c_str(),T.tformat == LIBRAW_THUMBNAIL_JPEG ? "thumb.jpg" : "thumb.ppm");
+        if( LIBRAW_SUCCESS != (ret = RawProcessor.dcraw_thumb_writer(thumbfn)))
+        {
+            fprintf(stderr,"Cannot write %s: %s\n",thumbfn,libraw_strerror(ret));
+
+            // in the case of fatal error, we should terminate processing of the current file
+            if(LIBRAW_FATAL_ERROR(ret))
+                goto end;
+        }
+    }
+    // Data unpacking
+//    ret = RawProcessor.dcraw_process();
+
+//    if(LIBRAW_SUCCESS != ret ) // error at the previous step
+//    {
+//        fprintf(stderr,"Cannot do postprocessing on %s: %s\n",file.c_str(),libraw_strerror(ret));
+//        if(LIBRAW_FATAL_ERROR(ret))
+//            goto end;
+//    }
+//    else  // Successful document processing
+//    {
+//        snprintf(outfn,sizeof(outfn),"%s.%s", file.c_str(), "tiff");
+//        if( LIBRAW_SUCCESS != (ret = RawProcessor.dcraw_ppm_tiff_writer(outfn)))
+//            fprintf(stderr,"Cannot write %s: error %d\n",outfn,ret);
+//    }
+
+    // we don't evoke recycle() or call the desctructor; C++ will do everything for us
+
+    {
+        QImage* reimport = new QImage(QString::fromStdString(file + ".thumb.jpg"));
+        emit newImage(reimport);
+
+    }
+    return;
+end:
+    // got here after an error
+    return;
 }
 
 void EOSCamera::takePreviewImage()
@@ -523,13 +679,14 @@ void EOSCamera::takePreviewImage()
     }
 
     /* autofocus every 10 shots */
-    if ((i%10) == 9) {
-        camera_auto_focus (canon, canoncontext);
-    } else {
-        camera_manual_focus (canon, (i/10-5)/2, canoncontext);
-    }
+    //    if ((i%10) == 9) {
+    //        camera_auto_focus (canon, canoncontext);
+    //        i = 0;
+    //    } else {
+    //        camera_manual_focus (canon, (i/10-5)/2, canoncontext);
+    //    }
 
-    ++i;
+    //    ++i;
 
     retval = gp_camera_capture_preview(canon, file, canoncontext);
     if (retval != GP_OK) {
@@ -578,7 +735,7 @@ void EOSCamera::takePreviewImage()
 
         QImage* image = new QImage(raw_image, cinfo.image_width, cinfo.image_height, QImage::Format_RGB888);
         image->bits();
-        emit newImage(image);
+        emit newPreview(image);
     }
 
 
@@ -666,7 +823,7 @@ void EOSCamera::testLoop()
 
             QImage* image = new QImage(raw_image, cinfo.image_width, cinfo.image_height, QImage::Format_RGB888);
             image->bits();
-            emit newImage(image);
+            emit newPreview(image);
         }
 
 

@@ -15,6 +15,8 @@ public:
     EOSCamera();
     ~EOSCamera();
 
+    void handleEvents();
+
     void testLoop();
 
     void takePicture();
@@ -23,6 +25,7 @@ public:
     void autoFocus();
 
 signals:
+    void newPreview(QImage* image);
     void newImage(QImage* image);
 
 private:

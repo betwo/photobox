@@ -6,6 +6,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 find_package(Gphoto2 REQUIRED)
+find_package(LibRaw REQUIRED)
 
 
 include_directories(${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS})
@@ -39,6 +40,7 @@ add_executable(photobox
     src/photobox_window.cpp
     src/camera.cpp
     src/director.cpp
+    src/pixmap.hpp
 
     ${QT_UI})
 
@@ -46,3 +48,6 @@ target_link_libraries(photobox
     ${Gphoto2_LIBRARIES}
     Qt5::Core Qt5::Gui Qt5::Widgets
     jpeg)
+
+target_link_libraries(photobox
+    ${LIBRAW_LIBRARIES} gomp jasper lcms)

@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <mutex>
+#include <condition_variable>
 
 class EOSCamera;
 
@@ -16,6 +17,9 @@ public:
     void run();
     void stop();
 
+private:
+    void setPreview(bool p);
+
 public slots:
     void takePicture();
 
@@ -23,7 +27,13 @@ private:
     EOSCamera& cam;
 
     std::mutex mutex;
+    std::condition_variable cond_picture_possible;
+    std::condition_variable cond_preview_possible;
+
     bool running;
+
+    bool is_preview_running;
+    bool is_picture_requested;
 };
 
 #endif // DIRECTOR_H

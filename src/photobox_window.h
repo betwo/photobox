@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "ui_photobox.h"
+#include "pixmap.hpp"
 
 class PhotoboxWindow : public QMainWindow
 {
@@ -16,10 +17,14 @@ signals:
     void takePicture();
 
 public slots:
+    void showPreview(QImage* image);
     void showImage(QImage* image);
 
 private:
     Ui::Photobox* ui;
+
+    Pixmap* last_image;
+    Pixmap* preview;
 };
 
 #endif // PHOTOBOXWINDOW_H

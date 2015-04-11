@@ -17,7 +17,9 @@ int main(int argc, char *argv[])
         director.run();
     });
 
+    QObject::connect(&camera, SIGNAL(newPreview(QImage*)), &box, SLOT(showPreview(QImage*)));
     QObject::connect(&camera, SIGNAL(newImage(QImage*)), &box, SLOT(showImage(QImage*)));
+
     QObject::connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
     QObject::connect(&box, SIGNAL(takePicture()), &director, SLOT(takePicture()));
 
