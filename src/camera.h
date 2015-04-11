@@ -15,8 +15,6 @@ public:
     EOSCamera();
     ~EOSCamera();
 
-    void handleEvents();
-
     void testLoop();
 
     void takePicture();

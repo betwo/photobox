@@ -20,6 +20,8 @@ public slots:
     void showPreview(QImage* image);
     void showImage(QImage* image);
 
+    void keyReleaseEvent(QKeyEvent* e);
+
 private:
     Ui::Photobox* ui;
 

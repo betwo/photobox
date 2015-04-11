@@ -446,56 +446,6 @@ EOSCamera::~EOSCamera()
     gp_camera_exit(canon, canoncontext);
 }
 
-void EOSCamera::handleEvents()
-{
-    int fd, retval;
-    CameraFile *file;
-    CameraEventType	evttype;
-    CameraFilePath	*path;
-    void	*evtdata;
-
-    retval = gp_camera_wait_for_event (canon, 1000, &evttype, &evtdata, canoncontext);
-    if (retval != GP_OK)
-        return;
-    switch (evttype) {
-    case GP_EVENT_FILE_ADDED:
-        //        path = (CameraFilePath*)evtdata;
-        printf("File added on the camera: %s/%s\n", path->folder, path->name);
-
-        //        fd = open(path->name, O_CREAT | O_WRONLY, 0644);
-        //        retval = gp_file_new_from_fd(&file, fd);
-        //        printf("  Downloading %s...\n", path->name);
-        //        retval = gp_camera_file_get(canon, path->folder, path->name,
-        //                                    GP_FILE_TYPE_NORMAL, file, canoncontext);
-
-        //        printf("  Deleting %s on camera...\n", path->name);
-        //        retval = gp_camera_file_delete(canon, path->folder, path->name, canoncontext);
-        //        gp_file_free(file);
-        break;
-    case GP_EVENT_FOLDER_ADDED:
-        path = (CameraFilePath*)evtdata;
-        printf("Folder added on camera: %s / %s\n", path->folder, path->name);
-        break;
-    case GP_EVENT_CAPTURE_COMPLETE:
-        printf("Capture Complete.\n");
-        break;
-    case GP_EVENT_TIMEOUT:
-        printf("Timeout.\n");
-        break;
-    case GP_EVENT_UNKNOWN:
-        if (evtdata) {
-            printf("Unknown event: %s.\n", (char*)evtdata);
-        } else {
-            printf("Unknown event.\n");
-        }
-        break;
-    default:
-        printf("Type %d?\n", evttype);
-        break;
-    }
-    std::cout.flush();
-}
-
 void EOSCamera::autoFocus()
 {
     CameraEventType evttype;
@@ -525,11 +475,18 @@ void EOSCamera::autoFocus()
 
 void EOSCamera::takePicture()
 {
+    gp_camera_exit(canon, canoncontext);
+    int retval = gp_camera_init(canon, canoncontext);
+    if (retval != GP_OK) {
+        printf("  Retval: %d\n", retval);
+        exit (1);
+    }
+    canon_enable_capture(canon, TRUE, canoncontext);
+
     int fd;
     CameraFile *canonfile;
     CameraFilePath camera_file_path;
 
-    int retval;
     CameraEventType evttype;
     void    	*evtdata;
 
@@ -687,6 +644,13 @@ void EOSCamera::takePreviewImage()
     //    }
 
     //    ++i;
+
+//    if(i > 1) {
+
+//        gp_file_unref(file);
+//        return;
+//    }
+//    ++i;
 
     retval = gp_camera_capture_preview(canon, file, canoncontext);
     if (retval != GP_OK) {

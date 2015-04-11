@@ -4,6 +4,7 @@
 #include <QPropertyAnimation>
 #include <QEasingCurve>
 #include <QTimer>
+#include <QKeyEvent>
 
 PhotoboxWindow::PhotoboxWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -12,19 +13,25 @@ PhotoboxWindow::PhotoboxWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    setWindowFlags(Qt::FramelessWindowHint);
+
     ui->graphicsView->setScene(new QGraphicsScene);
+    ui->graphicsView->setBackgroundBrush(QBrush(Qt::black));
 
     showFullScreen();
 
-
-    auto view = ui->graphicsView;
-
-    QObject::connect(ui->Cheese, SIGNAL(clicked()), this, SIGNAL(takePicture()));
 }
 
 PhotoboxWindow::~PhotoboxWindow()
 {
     delete ui;
+}
+
+void PhotoboxWindow::keyReleaseEvent(QKeyEvent *e)
+{
+    if(e->key() == Qt::Key_Space) {
+        takePicture();
+    }
 }
 
 void PhotoboxWindow::showPreview(QImage *image)
