@@ -5,6 +5,8 @@
 #include "ui_photobox.h"
 #include "pixmap.hpp"
 
+class QGraphicsBlurEffect;
+
 class PhotoboxWindow : public QMainWindow
 {
     Q_OBJECT
@@ -23,10 +25,17 @@ public slots:
     void keyReleaseEvent(QKeyEvent* e);
 
 private:
+    void doTakePicture();
+
+private:
     Ui::Photobox* ui;
+
+    QGraphicsBlurEffect* shot_effect;
 
     Pixmap* last_image;
     Pixmap* preview;
+
+    QGraphicsTextItem* text;
 };
 
 #endif // PHOTOBOXWINDOW_H

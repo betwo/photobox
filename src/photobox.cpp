@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     QObject::connect(&camera, SIGNAL(newImage(QImage*)), &box, SLOT(showImage(QImage*)));
 
     QObject::connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
-    QObject::connect(&box, SIGNAL(takePicture()), &director, SLOT(takePicture()));
+    QObject::connect(&box, SIGNAL(takePicture()), &director, SLOT(takePicture()), Qt::DirectConnection);
 
     box.show();
 
