@@ -24,8 +24,7 @@ public slots:
 
     void keyReleaseEvent(QKeyEvent* e);
 
-private:
-    void doTakePicture();
+    void showPictureTakingAnimations();
 
 private:
     Ui::Photobox* ui;

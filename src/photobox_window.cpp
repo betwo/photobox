@@ -39,11 +39,11 @@ PhotoboxWindow::~PhotoboxWindow()
 void PhotoboxWindow::keyReleaseEvent(QKeyEvent *e)
 {
     if(e->key() == Qt::Key_Space) {
-        doTakePicture();
+        emit takePicture();
     }
 }
 
-void PhotoboxWindow::doTakePicture()
+void PhotoboxWindow::showPictureTakingAnimations()
 {
     ui->graphicsView->viewport()->update();
 
@@ -113,9 +113,9 @@ void PhotoboxWindow::doTakePicture()
 
     QObject::connect(text_animation_opacity, SIGNAL(finished()), text_animation_opacity, SLOT(deleteLater()));
 
-    QtConcurrent::run([this]() {
-        emit takePicture();
-    });
+//    QtConcurrent::run([this]() {
+//        emit takePicture();
+//    });
 }
 
 void PhotoboxWindow::showPreview(QImage *image)
