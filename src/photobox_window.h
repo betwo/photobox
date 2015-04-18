@@ -4,8 +4,10 @@
 #include <QMainWindow>
 #include "ui_photobox.h"
 #include "pixmap.hpp"
+#include <QTimer>
 
 class QGraphicsBlurEffect;
+class QParallelAnimationGroup;
 
 class PhotoboxWindow : public QMainWindow
 {
@@ -16,6 +18,7 @@ public:
     ~PhotoboxWindow();
 
 signals:
+    void endPictureTakingAnimations();
     void takePicture();
 
 public slots:
@@ -24,7 +27,13 @@ public slots:
 
     void keyReleaseEvent(QKeyEvent* e);
 
-    void showPictureTakingAnimations();
+    void startPictureTakingAnimations();
+    void done();
+    void updateTime();
+
+private:
+    QParallelAnimationGroup * addTextAnimation(const std::string &text, double scale = 80);
+    QParallelAnimationGroup * hideTextAnimation(const std::string &text);
 
 private:
     Ui::Photobox* ui;
@@ -34,7 +43,13 @@ private:
     Pixmap* last_image;
     Pixmap* preview;
 
-    QGraphicsTextItem* text;
+    std::map<std::string, QGraphicsTextItem*> text;
+
+    int64_t show_time;
+
+    u_int64_t start_time;
+    QTimer time_left_timer;
+    QGraphicsTextItem* time_left_text;
 };
 
 #endif // PHOTOBOXWINDOW_H

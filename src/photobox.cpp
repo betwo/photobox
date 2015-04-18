@@ -10,7 +10,7 @@
 int main(int argc, char *argv[])
 {
     ArduinoButton button;
-//    button.run();
+    button.run();
 
 //    while(1) {
 //        std::cout << ".." << std::endl;
@@ -36,11 +36,11 @@ int main(int argc, char *argv[])
     QObject::connect(&camera, SIGNAL(newPreview(QImage*)), &box, SLOT(showPreview(QImage*)));
     QObject::connect(&camera, SIGNAL(newImage(QImage*)), &box, SLOT(showImage(QImage*)));
 
-    QObject::connect(&box, SIGNAL(takePicture()), &box, SLOT(showPictureTakingAnimations()));
-    QObject::connect(&button, SIGNAL(buttonPressed()), &box, SLOT(showPictureTakingAnimations()));
+    QObject::connect(&box, SIGNAL(takePicture()), &box, SLOT(startPictureTakingAnimations()));
+    QObject::connect(&button, SIGNAL(buttonPressed()), &box, SLOT(startPictureTakingAnimations()));
 
-    QObject::connect(&box, SIGNAL(takePicture()), &director, SLOT(takePicture()), Qt::QueuedConnection);
-    QObject::connect(&button, SIGNAL(buttonPressed()), &director, SLOT(takePicture()), Qt::DirectConnection);
+    QObject::connect(&box, SIGNAL(endPictureTakingAnimations()), &director, SLOT(takePicture()), Qt::QueuedConnection);
+//    QObject::connect(&button, SIGNAL(buttonPressed()), &director, SLOT(takePicture()), Qt::DirectConnection);
 
 
 
@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
 
     button.stop();
     director.stop();
+    director_thread.quit();
 
     return 0;
 }

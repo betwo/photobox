@@ -46,12 +46,14 @@ void loop(){
       pressed = !pressed;
       
       if(buttonState == LOW) {
-        Serial.print(1);
+        Serial.print('1');
       } else {
-        Serial.print(0);
+        Serial.print('0');
       }
     }
   }
+  
+  Serial.print('-');
  
   // set the LED:
   digitalWrite(ledPin, !pressed);
