@@ -10,13 +10,6 @@
 int main(int argc, char *argv[])
 {
     ArduinoButton button;
-    button.run();
-
-//    while(1) {
-//        std::cout << ".." << std::endl;
-//        std::this_thread::sleep_for(std::chrono::microseconds(1000000));
-//    }
-//    return 0;
 
     EOSCamera camera;
 
@@ -40,9 +33,7 @@ int main(int argc, char *argv[])
     QObject::connect(&button, SIGNAL(buttonPressed()), &box, SLOT(startPictureTakingAnimations()));
 
     QObject::connect(&box, SIGNAL(endPictureTakingAnimations()), &director, SLOT(takePicture()), Qt::QueuedConnection);
-//    QObject::connect(&button, SIGNAL(buttonPressed()), &director, SLOT(takePicture()), Qt::DirectConnection);
-
-
+    QObject::connect(&director, SIGNAL(doneTakingPicture()), &box, SLOT(allowTakingPicture()));
 
     QObject::connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
 

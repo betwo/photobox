@@ -16,7 +16,8 @@
 PhotoboxWindow::PhotoboxWindow(QWidget *parent)
     : QMainWindow(parent),
       ui(new Ui::Photobox),
-      last_image(nullptr), preview(nullptr), time_left_text(nullptr)
+      last_image(nullptr), preview(nullptr), time_left_text(nullptr), can_take_picture(true),
+      image_display_timer(new QTimer)
 {
     ui->setupUi(this);
 
@@ -33,6 +34,7 @@ PhotoboxWindow::PhotoboxWindow(QWidget *parent)
 PhotoboxWindow::~PhotoboxWindow()
 {
     delete ui;
+    delete image_display_timer;
 }
 
 void PhotoboxWindow::keyReleaseEvent(QKeyEvent *e)
@@ -135,8 +137,26 @@ QParallelAnimationGroup* PhotoboxWindow::hideTextAnimation(const std::string &tx
     return animation;
 }
 
+void PhotoboxWindow::allowTakingPicture()
+{
+    std::unique_lock<std::mutex> lock(state_mutex);
+    can_take_picture = true;
+}
+
 void PhotoboxWindow::startPictureTakingAnimations()
 {
+    {
+        std::unique_lock<std::mutex> lock(state_mutex);
+        if(!can_take_picture) {
+            return;
+        }
+        can_take_picture = false;
+    }
+
+    if(time_left_text && time_left_text->isVisible()) {
+        done();
+    }
+
     ui->graphicsView->viewport()->update();
 
 
@@ -232,29 +252,26 @@ void PhotoboxWindow::showImage(QImage *image)
 
     show_time = 8000;
 
-    QTimer* timer = new QTimer;
-    timer->setSingleShot(true);
-    timer->setInterval(show_time);
+    image_display_timer->setSingleShot(true);
+    image_display_timer->setInterval(show_time);
 
-    QObject::connect(timer, SIGNAL(timeout()), animation, SLOT(start()));
-    QObject::connect(timer, SIGNAL(timeout()), timer, SLOT(deleteLater()));
+    QObject::connect(image_display_timer, SIGNAL(timeout()), animation, SLOT(start()));
     QObject::connect(animation, SIGNAL(finished()), animation, SLOT(deleteLater()));
 
-    timer->start();
+    image_display_timer->start();
 
     view->fitInView(view->scene()->sceneRect(), Qt::KeepAspectRatio);
 
-    if(time_left_text == nullptr) {
-        time_left_text = new QGraphicsTextItem("Time left");
+    delete time_left_text;
+    time_left_text = new QGraphicsTextItem("Time left");
 
-        QFont serifFont("Arial", 64, QFont::Bold);
-        time_left_text->setFont(serifFont);
-        time_left_text->setDefaultTextColor(Qt::white);
+    QFont serifFont("Arial", 64, QFont::Bold);
+    time_left_text->setFont(serifFont);
+    time_left_text->setDefaultTextColor(Qt::white);
 
-        time_left_text->setPos(0, 0);
+    time_left_text->setPos(0, 0);
 
-        ui->graphicsView->scene()->addItem(time_left_text);
-    }
+    ui->graphicsView->scene()->addItem(time_left_text);
 
     time_left_timer.start(100);
     time_left_timer.setSingleShot(false);
@@ -283,4 +300,9 @@ void PhotoboxWindow::done()
 {
     time_left_timer.stop();
     time_left_text->hide();
+
+    if(image_display_timer->isActive()) {
+        image_display_timer->stop();
+        QMetaObject::invokeMethod(image_display_timer, "timeout");
+    }
 }

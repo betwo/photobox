@@ -31,6 +31,8 @@ void Director::takePicture()
 
     is_picture_requested = false;
     cond_preview_possible.notify_all();
+
+    emit doneTakingPicture();
 }
 
 void Director::setPreview(bool preview_requested)

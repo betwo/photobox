@@ -23,6 +23,9 @@ private:
 public slots:
     void takePicture();
 
+signals:
+    void doneTakingPicture();
+
 private:
     EOSCamera& cam;
 

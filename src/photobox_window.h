@@ -5,6 +5,7 @@
 #include "ui_photobox.h"
 #include "pixmap.hpp"
 #include <QTimer>
+#include <mutex>
 
 class QGraphicsBlurEffect;
 class QParallelAnimationGroup;
@@ -31,6 +32,8 @@ public slots:
     void done();
     void updateTime();
 
+    void allowTakingPicture();
+
 private:
     QParallelAnimationGroup * addTextAnimation(const std::string &text, double scale = 80);
     QParallelAnimationGroup * hideTextAnimation(const std::string &text);
@@ -50,6 +53,12 @@ private:
     u_int64_t start_time;
     QTimer time_left_timer;
     QGraphicsTextItem* time_left_text;
+
+    std::mutex state_mutex;
+    bool can_take_picture;
+
+
+    QTimer* image_display_timer;
 };
 
 #endif // PHOTOBOXWINDOW_H
