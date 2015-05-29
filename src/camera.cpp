@@ -510,7 +510,7 @@ void EOSCamera::takePicture()
 
     long now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-    std::string file = std::to_string(now) + camera_file_path.name;
+    std::string file = std::string("/home/buck/Pictures/Photobox/") + std::to_string(now) + camera_file_path.name;
     fd = open(file.c_str(), O_CREAT | O_WRONLY, 0644);
     retval = gp_file_new_from_fd(&canonfile, fd);
     printf("  Retval: %d\n", retval);
@@ -612,7 +612,7 @@ void EOSCamera::takePicture()
     // we don't evoke recycle() or call the desctructor; C++ will do everything for us
 
     {
-        QImage* reimport = new QImage(QString::fromStdString(file + ".thumb.jpg"));
+        QImage reimport(QString::fromStdString(file + ".thumb.jpg"));
         emit newImage(reimport);
 
     }
@@ -695,11 +695,13 @@ void EOSCamera::takePreviewImage()
 
         jpeg_finish_decompress(&cinfo);
         jpeg_destroy_decompress(&cinfo);
-        free(row_pointer[0]);
 
         QImage* image = new QImage(raw_image, cinfo.image_width, cinfo.image_height, QImage::Format_RGB888);
-        image->bits();
-        emit newPreview(image);
+
+        emit newPreview(image->copy());
+
+        free(row_pointer[0]);
+        free(raw_image);
     }
 
 
@@ -785,8 +787,7 @@ void EOSCamera::testLoop()
 
             //        QImage* image = new QImage(cinfo.image_width, cinfo.image_height, QImage::Format_ARGB32);
 
-            QImage* image = new QImage(raw_image, cinfo.image_width, cinfo.image_height, QImage::Format_RGB888);
-            image->bits();
+            QImage image(raw_image, cinfo.image_width, cinfo.image_height, QImage::Format_RGB888);
             emit newPreview(image);
         }
 

@@ -23,8 +23,8 @@ signals:
     void takePicture();
 
 public slots:
-    void showPreview(QImage* image);
-    void showImage(QImage* image);
+    void showPreview(QImage image);
+    void showImage(QImage image);
 
     void keyReleaseEvent(QKeyEvent* e);
 

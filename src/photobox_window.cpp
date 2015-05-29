@@ -181,19 +181,19 @@ void PhotoboxWindow::startPictureTakingAnimations()
     //    sequence->addAnimation(start);
 
 
-    sequence->addAnimation(addTextAnimation("3", 360));
+    sequence->addAnimation(addTextAnimation("3", 300));
     sequence->addPause(1000);
     sequence->addAnimation(hideTextAnimation("3"));
     sequence->addPause(100);
-    sequence->addAnimation(addTextAnimation("2", 360));
+    sequence->addAnimation(addTextAnimation("2", 300));
     sequence->addPause(1000);
     sequence->addAnimation(hideTextAnimation("2"));
     sequence->addPause(100);
-    sequence->addAnimation(addTextAnimation("1", 360));
+    sequence->addAnimation(addTextAnimation("1", 300));
     sequence->addPause(1000);
     sequence->addAnimation(hideTextAnimation("1"));
     sequence->addPause(100);
-    sequence->addAnimation(addTextAnimation("Bitte lächeln!", 120));
+    sequence->addAnimation(addTextAnimation("Bitte in die Kamera lächeln!", 100));
 
     sequence->start();
 
@@ -205,17 +205,17 @@ void PhotoboxWindow::startPictureTakingAnimations()
     //    });
 }
 
-void PhotoboxWindow::showPreview(QImage *image)
+void PhotoboxWindow::showPreview(QImage image)
 {
     auto view = ui->graphicsView;
     if(preview == nullptr) {
-        preview = new Pixmap(QPixmap::fromImage(image->mirrored(true, false)));
+        preview = new Pixmap(QPixmap::fromImage(image.mirrored(true, false)));
         view->scene()->addItem(preview);
         shot_effect->setBlurHints(QGraphicsBlurEffect::AnimationHint | QGraphicsBlurEffect::QualityHint);
         preview->setGraphicsEffect(shot_effect);
 
     } else {
-        preview->setPixmap(QPixmap::fromImage(image->mirrored(true, false)));
+        preview->setPixmap(QPixmap::fromImage(image.mirrored(true, false)));
     }
 
     shot_effect->setBlurRadius(0);
@@ -224,15 +224,15 @@ void PhotoboxWindow::showPreview(QImage *image)
 }
 
 
-void PhotoboxWindow::showImage(QImage *image)
+void PhotoboxWindow::showImage(QImage image)
 {
-    std::cout << "show image of size " << image->width() << "x" << image->height() << std::endl;
+    std::cout << "show image of size " << image.width() << "x" << image.height() << std::endl;
     auto view = ui->graphicsView;
     if(last_image == nullptr) {
-        last_image = new Pixmap(QPixmap::fromImage(*image));
+        last_image = new Pixmap(QPixmap::fromImage(image));
         view->scene()->addItem(last_image);
     } else {
-        last_image->setPixmap(QPixmap::fromImage(*image));
+        last_image->setPixmap(QPixmap::fromImage(image));
     }
 
     for(auto t : text) {

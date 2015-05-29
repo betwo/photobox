@@ -23,8 +23,8 @@ public:
     void autoFocus();
 
 signals:
-    void newPreview(QImage* image);
-    void newImage(QImage* image);
+    void newPreview(QImage image);
+    void newImage(QImage image);
 
 private:
     Camera	*canon;
