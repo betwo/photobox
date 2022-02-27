@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.1.0)
 
 project(photobox)
 
@@ -6,7 +6,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 find_package(Gphoto2 REQUIRED)
-find_package(LibRaw REQUIRED)
 find_package(Boost COMPONENTS REQUIRED system)
 
 
@@ -28,6 +27,7 @@ else()
         message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+add_subdirectory(3rdparty)
 
 set(CMAKE_AUTOMOC ON)
 
@@ -53,4 +53,4 @@ target_link_libraries(photobox
     jpeg)
 
 target_link_libraries(photobox
-    ${LIBRAW_LIBRARIES} gomp jasper lcms)
+    libraw::libraw
