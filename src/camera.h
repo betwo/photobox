@@ -12,7 +12,7 @@ class EOSCamera : public QObject
     Q_OBJECT
 
 public:
-    EOSCamera();
+    EOSCamera(const std::string& output_directory);
     ~EOSCamera();
 
     void testLoop();
@@ -27,6 +27,7 @@ signals:
     void newImage(QImage image);
 
 private:
+    const std::string output_directory;
     Camera	*canon;
     GPContext *canoncontext;
 };

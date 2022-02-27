@@ -6,13 +6,36 @@
 #include <QtConcurrent/QtConcurrentRun>
 #include "arduino_button.h"
 #include <thread>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-#define USE_BUTTON 1
+#define USE_BUTTON 0
+
+static bool is_writable_directory(const std::string& path)
+{
+    struct stat path_stat;
+    stat(path.c_str(), &path_stat);
+    return S_ISDIR(path_stat.st_mode) && (access(path.c_str(), W_OK) == 0);
+}
 
 int main(int argc, char *argv[])
 {
+    if(argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " output-directory" << "\nWhere the output-directory argument must be a valid directory." << std::endl;
+        return 1;
+    }
 
-    EOSCamera camera;
+    std::string output_dir = argv[1];
+    if(!is_writable_directory(output_dir)){
+        std::cerr << output_dir << " is not a writable directory." << std::endl;
+        return 1;
+    }
+    if(output_dir.back() != '/') {
+        output_dir += "/";
+    }
+
+    EOSCamera camera(output_dir);
 
     QThread director_thread;
     Director director(camera);

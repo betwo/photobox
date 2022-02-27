@@ -417,7 +417,8 @@ out:
 
 
 
-EOSCamera::EOSCamera()
+EOSCamera::EOSCamera(const std::string& output_dir)
+    : output_directory(output_dir)
 {
     canoncontext = gp_context_new();
     gp_context_set_error_func (canoncontext, ctx_error_func, NULL);
@@ -475,6 +476,7 @@ void EOSCamera::autoFocus()
 
 void EOSCamera::takePicture()
 {
+    printf("Enabling camera capture.\n");
     gp_camera_exit(canon, canoncontext);
     int retval = gp_camera_init(canon, canoncontext);
     if (retval != GP_OK) {
@@ -510,10 +512,12 @@ void EOSCamera::takePicture()
 
     long now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-    std::string file = std::string("/home/buck/Pictures/Photobox/") + std::to_string(now) + camera_file_path.name;
+    std::string file = output_directory + std::to_string(now) + camera_file_path.name;
+    printf("creating file %s\n", file.c_str());
     fd = open(file.c_str(), O_CREAT | O_WRONLY, 0644);
     retval = gp_file_new_from_fd(&canonfile, fd);
     printf("  Retval: %d\n", retval);
+    printf("Downloading file %s\n", file.c_str());
     retval = gp_camera_file_get(canon, camera_file_path.folder, camera_file_path.name,
                                 GP_FILE_TYPE_NORMAL, canonfile, canoncontext);
     printf("  Retval: %d\n", retval);
@@ -611,6 +615,9 @@ void EOSCamera::takePicture()
 
     // we don't evoke recycle() or call the desctructor; C++ will do everything for us
 
+    printf("Disable camera capture.\n");
+    canon_enable_capture(canon, FALSE, canoncontext);
+
     {
         QImage reimport(QString::fromStdString(file + ".thumb.jpg"));
         emit newImage(reimport);
@@ -634,23 +641,6 @@ void EOSCamera::takePreviewImage()
         fprintf(stderr,"gp_file_new: %d\n", retval);
         exit(1);
     }
-
-    /* autofocus every 10 shots */
-    //    if ((i%10) == 9) {
-    //        camera_auto_focus (canon, canoncontext);
-    //        i = 0;
-    //    } else {
-    //        camera_manual_focus (canon, (i/10-5)/2, canoncontext);
-    //    }
-
-    //    ++i;
-
-//    if(i > 1) {
-
-//        gp_file_unref(file);
-//        return;
-//    }
-//    ++i;
 
     retval = gp_camera_capture_preview(canon, file, canoncontext);
     if (retval != GP_OK) {

@@ -8,12 +8,12 @@ find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 find_package(Gphoto2 REQUIRED)
 find_package(Boost COMPONENTS REQUIRED system)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 include_directories(${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS})
 include_directories(${Gphoto2_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/build)
-
-
 
 ## Enforce that we use C++11
 include(CheckCXXCompilerFlag)
@@ -35,7 +35,6 @@ set(CMAKE_AUTOMOC ON)
 qt5_wrap_ui(QT_UI
     ui/photobox.ui)
 
-
 add_executable(photobox
     src/photobox.cpp
     src/photobox_window.cpp
@@ -54,3 +53,5 @@ target_link_libraries(photobox
 
 target_link_libraries(photobox
     libraw::libraw
+    Threads::Threads
+)
